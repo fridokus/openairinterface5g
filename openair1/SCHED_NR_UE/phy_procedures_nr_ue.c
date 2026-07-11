@@ -44,6 +44,10 @@
 #include "T.h"
 #include "instrumentation.h"
 
+#ifdef LDPC_CUDA
+#include "PHY/gpu_compat.h"
+#endif
+
 static const unsigned int gain_table[31] = {100,  112,  126,  141,  158,  178,  200,  224,  251, 282,  316,
                                             359,  398,  447,  501,  562,  631,  708,  794,  891, 1000, 1122,
                                             1258, 1412, 1585, 1778, 1995, 2239, 2512, 2818, 3162};

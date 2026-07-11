@@ -19,7 +19,7 @@
 #include "nr-uesoftmodem.h"
 #include "common/config/config_userapi.h"
 #ifdef LDPC_CUDA
-#include <cuda_runtime.h>
+#include "PHY/gpu_compat.h"
 #endif
 
 void RCconfig_nrUE_prs(void *cfg)
@@ -333,7 +333,7 @@ void free_nr_ue_dl_harq(NR_DL_UE_HARQ_t harq_list[2][NR_MAX_HARQ_PROCESSES], int
   for (int j=0; j < 2; j++) {
     for (int i = 0; i < number_of_processes; i++) {
 #ifdef LDPC_CUDA
-      cudaFreeHost(harq_list[j][i].c);
+      gpuFreeHost(harq_list[j][i].c);
 #else
       free_and_zero(harq_list[j][i].c);
 #endif
@@ -357,8 +357,8 @@ void free_nr_ue_ul_harq(NR_UL_UE_HARQ_t harq_list[NR_MAX_HARQ_PROCESSES], int nu
 #ifdef LDPC_CUDA
     {
       // nr_init_ul_harq_processes() makes single allocation(!)
-      cudaFreeHost(harq_list[i].c[0]);
-      cudaFreeHost(harq_list[i].d[0]);
+      gpuFreeHost(harq_list[i].c[0]);
+      gpuFreeHost(harq_list[i].d[0]);
     }
 #else
     for (int r = 0; r < a_segments; r++) {
@@ -384,8 +384,8 @@ void free_nr_ue_pdsch_buffers(pdsch_scratch_t *buffers, int num_actors)
     free_and_zero(buffers[i].pdsch_dl_ch_estimates);
     for (int c = 0; c < 2; c++) {
 #ifdef LDPC_CUDA
-      cudaFreeHost(buffers[i].llr[c]);
-      cudaFreeHost(buffers[i].llr_dev[c]);
+      gpuFreeHost(buffers[i].llr[c]);
+      gpuFreeHost(buffers[i].llr_dev[c]);
 #else
       free_and_zero(buffers[i].llr[c]);
 #endif
@@ -417,10 +417,10 @@ void nr_init_dl_harq_processes(NR_DL_UE_HARQ_t harq_list[2][NR_MAX_HARQ_PROCESSE
       init_downlink_harq_status(harq_list[j] + i);
 
 #ifdef LDPC_CUDA
-      cudaError_t err = cudaHostAlloc((void **)&harq_list[j][i].c, a_segments * sizeof(uint8_t *) * 1056, cudaHostAllocMapped);
-      AssertFatal(err == cudaSuccess, "CUDA Error (harq.c): %s\n", cudaGetErrorString(err));
-      err = cudaHostGetDevicePointer((void **)&harq_list[j][i].cdev, (void *)harq_list[j][i].c, 0);
-      AssertFatal(err == cudaSuccess, "CUDA Error (harq.cdev): %s\n", cudaGetErrorString(err));
+      gpuError_t err = gpuHostAlloc((void **)&harq_list[j][i].c, a_segments * sizeof(uint8_t *) * 1056, gpuHostAllocMapped);
+      AssertFatal(err == gpuSuccess, "CUDA Error (harq.c): %s\n", gpuGetErrorString(err));
+      err = gpuHostGetDevicePointer((void **)&harq_list[j][i].cdev, (void *)harq_list[j][i].c, 0);
+      AssertFatal(err == gpuSuccess, "CUDA Error (harq.cdev): %s\n", gpuGetErrorString(err));
 #else
       harq_list[j][i].c = malloc16(a_segments * sizeof(*harq_list[j][i].c) * 1056);
 #endif
@@ -454,17 +454,17 @@ void nr_init_ul_harq_processes(NR_UL_UE_HARQ_t harq_list[NR_MAX_HARQ_PROCESSES],
     size_t total_c_size = a_segments * 8448;
     size_t total_d_size = a_segments * 68 * 384 * sizeof(uint32_t);
 
-    cudaError_t err = cudaHostAlloc((void **)&tmp_c, total_c_size, cudaHostAllocMapped);
-    AssertFatal(err == cudaSuccess, "cudaHostAlloc() tmp_c: %s\n", cudaGetErrorString(err));
-    err = cudaHostAlloc((void **)&tmp_d, total_d_size, cudaHostAllocMapped);
-    AssertFatal(err == cudaSuccess, "cudaHostAlloc() tmp_d: %s\n", cudaGetErrorString(err));
+    gpuError_t err = gpuHostAlloc((void **)&tmp_c, total_c_size, gpuHostAllocMapped);
+    AssertFatal(err == gpuSuccess, "gpuHostAlloc() tmp_c: %s\n", gpuGetErrorString(err));
+    err = gpuHostAlloc((void **)&tmp_d, total_d_size, gpuHostAllocMapped);
+    AssertFatal(err == gpuSuccess, "gpuHostAlloc() tmp_d: %s\n", gpuGetErrorString(err));
     memset(tmp_c, 0, total_c_size);
     memset(tmp_d, 0, total_d_size);
 
-    err = cudaHostAlloc((void **)&harq_list[i].c, a_segments * sizeof(uint8_t *), cudaHostAllocMapped);
-    AssertFatal(err == cudaSuccess, "cudaHostAlloc() harq.c: %s\n", cudaGetErrorString(err));
-    err = cudaHostAlloc((void **)&harq_list[i].d, a_segments * sizeof(uint8_t *), cudaHostAllocMapped);
-    AssertFatal(err == cudaSuccess, "cudaHostAlloc() harq.d: %s\n", cudaGetErrorString(err));
+    err = gpuHostAlloc((void **)&harq_list[i].c, a_segments * sizeof(uint8_t *), gpuHostAllocMapped);
+    AssertFatal(err == gpuSuccess, "gpuHostAlloc() harq.c: %s\n", gpuGetErrorString(err));
+    err = gpuHostAlloc((void **)&harq_list[i].d, a_segments * sizeof(uint8_t *), gpuHostAllocMapped);
+    AssertFatal(err == gpuSuccess, "gpuHostAlloc() harq.d: %s\n", gpuGetErrorString(err));
 
     for (int r = 0; r < a_segments; r++) {
       harq_list[i].c[r] = tmp_c + (r * 8448);
@@ -508,10 +508,10 @@ void nr_init_pdsch_buffers(pdsch_scratch_t *buffers, int num_actors, const NR_DL
     buffers[i].pdsch_dl_ch_estimates = malloc16_clear(ch_est_elems * sizeof(int32_t));
     for (int c = 0; c < 2; c++) {
 #ifdef LDPC_CUDA
-      cudaError_t err = cudaHostAlloc((void **)&buffers[i].llr[c], (66 * 3 * 8448) * sizeof(int16_t), cudaHostAllocMapped);
-      AssertFatal(err == cudaSuccess, "CUDA Error (pusch_llr): %s\n", cudaGetErrorString(err));
-      err = cudaHostGetDevicePointer((void **)&buffers[i].llr_dev[c], buffers[i].llr[c], 0);
-      AssertFatal(err == cudaSuccess, "CUDA Error (pusch_llr_dev): %s\n", cudaGetErrorString(err));
+      gpuError_t err = gpuHostAlloc((void **)&buffers[i].llr[c], (66 * 3 * 8448) * sizeof(int16_t), gpuHostAllocMapped);
+      AssertFatal(err == gpuSuccess, "CUDA Error (pusch_llr): %s\n", gpuGetErrorString(err));
+      err = gpuHostGetDevicePointer((void **)&buffers[i].llr_dev[c], buffers[i].llr[c], 0);
+      AssertFatal(err == gpuSuccess, "CUDA Error (pusch_llr_dev): %s\n", gpuGetErrorString(err));
 #else
       buffers[i].llr[c]              = malloc16(llr_buf_max * sizeof(int16_t));
 #endif
