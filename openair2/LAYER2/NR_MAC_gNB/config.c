@@ -42,7 +42,7 @@ static bool check_periodicity(int val, int ideal_period, const frame_structure_t
   return (ideal_period < val + 1) && valid_periodicity_for_tdd_period;
 }
 
-int set_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_type)
+int set_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_type, int num_pucch_slot)
 {
   const frame_structure_t *fs = &cell->frame_structure;
   const int nb_slots_per_period = fs->numb_slots_period;
@@ -61,7 +61,7 @@ int set_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_
     case CSI_RS:
     case CSI_MEASUREMENTS: {
       int csi_periodicities[10] = {4, 5, 8, 10, 16, 20, 40, 80, 160, 320};
-      int csi_ideal_period = MAX_MOBILES_PER_GNB * 2 * nb_slots_per_period / n_ul_slots_per_period;
+      int csi_ideal_period = MAX_MOBILES_PER_GNB * 2 * nb_slots_per_period / (n_ul_slots_per_period * num_pucch_slot);
       for (int i = 0; i < 10; i++) {
         if (check_periodicity(csi_periodicities[i], csi_ideal_period, fs))
           return csi_periodicities[i];
@@ -971,7 +971,7 @@ static void config_period_structures(nr_cell_sched_t *cell)
 {
   // only SRS for now
   if (cell->radio_config.do_SRS == PERIODIC_SRS) {
-    cell->srs_period = set_ideal_period(cell, SRS);
+    cell->srs_period = set_ideal_period(cell, SRS, 0);
     AssertFatal(cell->srs_period > 0, "Invalid SRS periodicity\n");
     cell->period_srs_sched = calloc_or_fail(cell->srs_period, sizeof(NR_UE_info_t *));
   }
