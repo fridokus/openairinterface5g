@@ -3,7 +3,9 @@
 add_library(nr_phy_common src/nr_phy_common.c
                           src/nr_channel_compensation.c
                           src/nr_compute_llr.c
-                          src/nr_layer_demapping.c)
+                          src/nr_layer_demapping.c
+                          ${OPENAIR1_DIR}/PHY/TOOLS/oai_arith_operations.c
+                          ${OPENAIR1_DIR}/PHY/TOOLS/get_sin_cos.c)
 target_link_libraries(nr_phy_common PRIVATE UTIL PHY_COMMON)
 target_include_directories(nr_phy_common PUBLIC inc/)
 

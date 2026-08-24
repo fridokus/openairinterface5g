@@ -822,7 +822,6 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
   ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/get_sin_cos.c
   ${OPENAIR1_DIR}/PHY/TOOLS/oai_arith_operations.c
   )
 
@@ -919,6 +918,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/nr_phy_common/src/nr_phy_common_srs.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_scrambling.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/refsig.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/dfts_load.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod_nr.c
   ${OPENAIR1_DIR}/PHY/MODULATION/PHY_ofdm_mod.c
   )
@@ -1026,7 +1026,7 @@ add_library(PHY_UE ${PHY_SRC_UE})
 target_link_libraries(PHY_UE PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs UTIL)
 
 add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
-target_link_libraries(PHY_NR_COMMON PUBLIC UTIL)
+target_link_libraries(PHY_NR_COMMON PUBLIC UTIL crc_byte)
 
 if (ENABLE_LDPC_CUDA)
   find_package(CUDA REQUIRED)
